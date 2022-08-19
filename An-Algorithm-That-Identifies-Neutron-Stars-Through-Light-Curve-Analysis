@@ -1,0 +1,66 @@
+import astropy
+import pylab as pl
+import numpy as np
+from astropy.visualization import quantity_support
+from astropy import units as u
+from astropy import wcs
+import csv
+import os
+import pandas as pd 
+import matplotlib.pyplot as plt
+import pyarrow
+from fastparquet import ParquetFile
+from astropy import units as u 
+from astropy.time import Time 
+from astropy.timeseries import TimeSeries 
+from astropy.timeseries import LombScargle 
+
+#reading the file 
+file = "/Users/ellin/OneDrive/Desktop/ZTF_Files/ztf_000202_zg_c10_q1_dr12.parquet"
+pf1 = pd.read_parquet(file,engine="pyarrow")    #creating the data table
+pf1
+
+#plotting the raw scatter plot 
+star = 5   #candidate number 
+time = pf1.iloc[star,7]   #picking out the data
+flux = pf1.iloc[star,8]
+plt.figure(dpi=100)
+plt.title("unfolded light curve")
+plt.xlabel("time [julian days]")
+plt.ylabel("flux")
+plt.scatter(time,flux)
+
+#plotting w/error
+eflux = pf1.iloc[star,9]   #helps detect any error sources 
+plt.figure(dpi=100)
+plt.title("unfolded light curve with error")
+plt.xlabel("time [julian days]")
+plt.ylabel("flux")
+plt.errorbar(time,flux,eflux,marker = ".",ls = "None")
+
+#Lomb Scargle 
+frequency, power = LombScargle(time,flux,eflux).autopower(nyquist_factor=50)   #taking raw data and transforming it into a power spectrum 
+plt.figure(dpi=100)
+plt.title("Lomb Scargle")
+plt.xlabel("time [julian days]")
+plt.ylabel("flux")
+plt.plot(frequency,power)   #gives a predicted model of period 
+
+#Finding the Period/Folding the Period
+period = 1/frequency[np.argmax(power)]   #extracts period from the model 
+period
+period_crc = period
+timeobject = Time(time*u.day,format="jd")
+lc_info = {"data":flux,"time":timeobject,"dataerr":eflux}   #creating new time axes based on period model 
+ts = TimeSeries(data=lc_info)   
+tsfolded = ts.fold(period=period_crc*u.day)
+
+#Plotting the Folded Light Curve
+plt.figure(dpi=100)   #using new time series model to superimpose the period into the flux 
+plt.title("Folded Light Curve")
+plt.xlabel("time [julian days]")
+plt.ylabel("flux")
+plt.errorbar(tsfolded.time.jd/period_crc, tsfolded['data'],yerr=tsfolded['dataerr'],ls='none', marker='.')
+
+print(period)
+pf1
