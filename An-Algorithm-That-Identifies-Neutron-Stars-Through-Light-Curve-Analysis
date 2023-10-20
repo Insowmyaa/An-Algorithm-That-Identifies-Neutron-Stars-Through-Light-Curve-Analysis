@@ -16,12 +16,12 @@ from astropy.timeseries import TimeSeries
 from astropy.timeseries import LombScargle 
 
 #reading the file 
-file = "/Users/ellin/OneDrive/Desktop/ZTF_Files/ztf_000202_zg_c10_q1_dr12.parquet"
+file = "/Users/ellin/OneDrive/Desktop/ZTF_Files/ztf_000245_zg_c11_q2_dr12.parquet"
 pf1 = pd.read_parquet(file,engine="pyarrow")    #creating the data table
 pf1
 
 #plotting the raw scatter plot 
-star = 5   #candidate number 
+star = 118 #candidate number 
 time = pf1.iloc[star,7]   #picking out the data
 flux = pf1.iloc[star,8]
 plt.figure(dpi=100)
@@ -63,4 +63,17 @@ plt.ylabel("flux")
 plt.errorbar(tsfolded.time.jd/period_crc, tsfolded['data'],yerr=tsfolded['dataerr'],ls='none', marker='.')
 
 print(period)
+
+if 1 <= period <= 3:
+    print('Cepheids CWB, (W Virginis Type variable stars w/ P<8d) star has been found')
+elif 0.05 <= period <= 0.2: 
+    print('Delta Scuti (DCST)')
+elif 0.5 <= period <= 0.6: 
+    print('RR Lyrae Variables (RRAB, RR Lyrae w/asymmetric light curves) star has been found')
+elif 295 <= period <= 436: 
+    print('Mira Variable star has been found')
+elif 0.1 <= period <= 0.49:
+    print('Eclipsing Binaries (EW, W Ursae Majoris Type binaries) star has been found')
+else: 
+    print('star not found')
 pf1
